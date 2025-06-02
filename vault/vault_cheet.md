@@ -39,7 +39,7 @@ $ vault auth disable <path>
 ## シークレットエンジン全般
 #### シークレットエンジンの有効化
 ```
-$ vault secrets enable <path> <engine>
+$ vault secrets enable -path=<path> <engine>
 ```
 > [!NOTE]
 > \<engine\>は以下がある。(他にもある。)
@@ -62,6 +62,11 @@ $ vault kv put <path>/<data name> <KEY1>="<Value1>" <KEY2>="<Value2>"
 #### kvsからkey/value情報を取得
 ```
 $ vault kv get <path>/<data name>
+```
+
+#### kvsからkey/valueを削除する
+```
+$ vault kv metadata <path>/<data name>
 ```
 
 ## vault API
