@@ -59,8 +59,8 @@ $ vault secrets tune -max-lease-ttl=<TTL> <pkiパス>
 3. 中間証明書と失効リストのエンドポイントを設定する
 ```
 $ vault write pki_u6s_int/config/urls \
-  issuing_certificates="https://vault01.uws.lan:8200/v1/pki_u6s_int/ca" \
-  crl_distribution_points="https://vault01.uws.lan:8200/v1/pki_u6s_int/crl"
+  issuing_certificates="https://<FQDN>:8200/v1/pki_u6s_int/ca" \
+  crl_distribution_points="https://<FQDN>:8200/v1/pki_u6s_int/crl"
 ```
 4. CSRを発行する
 ```
@@ -125,8 +125,18 @@ $ vault policy write u6s-master-policy u6s-master-policy.hcl
 ## formatの指定はpath指定前が良い。後に書くとjsonファイルにwarningメッセージが記載される。(影響はない)
 ## ファイルにリダイレクトしないと標準出力に表示される。
 ## ttlを指定しないとroleに定義されたdefault ttlが設定される。
-$ vault write -format=json <path>/issue/<role名> common_name="<FQDN>" ttl="<TTL(24h)>" > <FQDN>.json
+$ vault write -format=json <path>/issue/<role名> \
+  common_name="<FQDN>" \
+  alt_names="DNS:<host名>,IP:<ipaddress>" \
+  ttl="<TTL(24h)>" > <FQDN>.json
 ```
+証明書チェーンファイルと秘密鍵ファイルを作成する。  
+```
+jq -r '.data.private_key' <FQDN>.json > <FQDN>.key
+jq -r '.data.certificate' <FQDN>.json > <FQDN>.crt
+jq -r '.data.issuing_ca' <FQDN>.json >> <FQDN>.crt
+```
+
 ### 中間証明書を削除する
 ```
 ## 発行者一覧を確認

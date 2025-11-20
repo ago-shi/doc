@@ -49,6 +49,8 @@ https://github.com/ago-shi/uws/blob/main/u6s-cluster.yml
     - role: linuxK8sSetup  
 
 #### 証明書類の複製
+!!! 新規ノードを追加する場合は不要な手順 !!!
+!!! 既存ノードを再構築した場合のみ実行すれば良い !!!
 クラスタの既存ノードから証明書、鍵をコピーする。
 ```
 $ cd /etc/kubernetes/pki
@@ -68,7 +70,10 @@ kubeadm join u6s-master:6443 --token h8bpe5.XXXXXXXXXXXX --discovery-token-ca-ce
 
 #### ノード追加
 !!! 追加予定のノードで実行すること !!!  
+
 追加するノードで証明書類を展開する。
+!!! 証明書類の展開は新規ノードを追加する場合は不要な手順 !!!
+!!! 既存ノードを再構築した場合のみ実行すれば良い !!!
 ```
 $ sudo mkdir /etc/kubernetes/pki
 $ sudo tar zxvf /tmp/kube-certs.tar.gz -C /etc/kubernetes/pki
@@ -146,11 +151,25 @@ $ sudo ctr -n k8s.io t ls | grep a767a9335301691a6ea2568f93992b69a3ac3ec20fae34b
 ## あったらタスクがゾンビ化しているので削除する。
 $ sudo ctr -n k8s.io t kill {task id}
 
-$ ctr -n k8s.io c ls | grep a767a9335301691a6ea2568f93992b69a3ac3ec20fae34b379bfb4f6807d252e
+$ sudo ctr -n k8s.io c ls | grep a767a9335301691a6ea2568f93992b69a3ac3ec20fae34b379bfb4f6807d252e
 ## あったらコンテナがゾンビ化しているので削除する。
-$ ctr -n k8s.io c rm {container id}
+$ sudo ctr -n k8s.io c rm {container id}
 
 ## タスク又はコンテナを削除したらcontainerdを再起動する。
 $ sudo systemctl restart containerd.service
 ```
 (参考)https://kubeedge.io/docs/faq/setup/
+
+## ノード停止
+
+### アンスケジュール(cordon)
+```
+$ kubectl cordon <<node name>>
+
+## STATUSがSchedulingDisabledになる。
+$ kubectl get nodes
+NAME           STATUS                     ROLES           AGE    VERSION
+u6s-worker01   Ready,SchedulingDisabled   <none>          220d   v1.32.0
+u6s-worker02   Ready,SchedulingDisabled   <none>          220d   v1.32.0
+u6s-worker03   Ready,SchedulingDisabled   <none>          77d    v1.32.5
+```
