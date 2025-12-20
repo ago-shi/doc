@@ -50,12 +50,7 @@ curl -s \
 ```bash
 VAULT_TOKEN=$(curl -s \
   --request POST \
-  --data @- \
-  $VAULT_ADDR/v1/dev/auth/approle/login <<EOF
-> {
->    "role_id": "$ROLE_ID",
->    "secret_id": "$SECRET_ID"
-> }
-> EOF
+  --data "{\"role_id\": \"$ROLE_ID\", \"secret_id\": \"$SECRET_ID\"}" \
+  $VAULT_ADDR/v1/auth/dev/approle/login
   | jq -r '.auth.client_token')
 ```

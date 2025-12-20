@@ -35,7 +35,7 @@ key_type=ca \
 allow_user_certificates=true
 allowed_users="user01,user02,user03" \
 default_user="user01" \
-ttl=6h \e
+ttl=6h \
 max_ttl=12h
 ```
 
@@ -99,7 +99,7 @@ ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519
 ```bash
 PUBKEY=$(cat ~/.ssh/id_ed25519.pub)
 
-curl \
+curl -s \
   --header "X-Vault-Token: $VAULT_TOKEN" \
   --header "Content-Type: application/json" \
   --request POST \
@@ -107,7 +107,7 @@ curl \
   $VAULT_ADDR/v1/ssh/dev/client-ca/sign/dev-server \
   > signed_key.json
 
-jq -r '.data.signed.key' signed_key.json > ~/.ssh/id_ed25519-cert.pub
+jq -r '.data.signed_key' signed_key.json > ~/.ssh/id_ed25519-cert.pub
 ```
 
 ### 4-3. SSHクライアント設定
@@ -116,6 +116,7 @@ vi ~/.ssh/config
 
 ### 以下をconfigファイルへ記載
 Host dev-server
+  HostName dev-server.uws.lan
   IdentityFile ~/.ssh/id_ed25519
   CertificateFile ~/.ssh/id_ed25519-cert.pub
 ```
@@ -151,12 +152,13 @@ $VAULT_ADDR/v1/ssh/dev/host-ca/config/ca \
 
 ### 6-1. 署名ポリシーの作成
 ```bash
-vault write ssh/dev/host-ca/dev-uws-lan \
+vault write ssh/dev/host-ca/roles/dev-uws-lan \
 key_type=ca \
 allow_host_certificates=true \
-allowed_domains="dev.uws.lan" \
 allow_subdomains=true \
-ttl=8760h
+allowed_domains="uws.lan" \
+ttl=8760h \
+max_ttl=8760h
 ```
 
 ### 6-2. SSHサーバ用vault policyの設定
@@ -211,13 +213,13 @@ curl \
   --header "X-Vault-Token: $VAULT_TOKEN" \
   --header "Content-Type: application/json" \
   --request POST \
-  --data "{\"public_key\": \"${HOST_PUBKEY}\", \"cert_type\": \"host\"}" \
-  $VAULT_ADDR/v1/ssh/dev/host-ca/sign/dev-uws-dev \
+  --data "{\"public_key\": \"${HOST_PUBKEY}\", \"cert_type\": \"host\", \"valid_principals\": \"dev-u6s-mng01.uws.lan\"}" \
+  $VAULT_ADDR/v1/ssh/dev/host-ca/sign/dev-uws-lan \
   > signed_host.json
 
-jq -r '.data.signed_key' signed_host.json > /etc/ssh/id_host_ed25519_key-cert.pub
+jq -r '.data.signed_key' signed_host.json > /etc/ssh/ssh_host_ed25519_key-cert.pub
 
-sudo chown root:root /etc/ssh/id_host_ed25519_key-cert.pub
+sudo chown root:root /etc/ssh/ssh_host_ed25519_key-cert.pub
 sudo chmod 600 /etc/ssh/id_host_ed25519_key-cert.pub
 ```
 
@@ -227,7 +229,7 @@ vi ~/etc/ssh/sshd_config
 
 ### 以下をsshd_configファイルへ記載
 HostKey /etc/ssh/ssh_host_ed25519_key
-HostCertificate /etc/ssh_host_ed25519_key-cert.pub
+HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub
 
 ### sshd_configファイルを更新したらsshdを再起動
 sudo systemctl restart sshd
